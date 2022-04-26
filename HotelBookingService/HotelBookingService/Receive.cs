@@ -1,78 +1,70 @@
 ﻿using System;
-using System.ComponentModel.Design;
 using System.Text;
-using Consumer.Models;
-using Consumer.Models.BookingCommands;
-using Consumer.Models.CancelCommands;
+using Consumer.Database;
+using Consumer.Models.Dto;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace Consumer
+namespace Consumer;
+
+public static class Receive
 {
-    public static class Receive
-    {
-        private const string ExchangeName = "CommandExchange";
-        private const string RoutingKey = "HotelKey";
+    private const string ReservationQueue = "ReservationQueue";
+    private const string ConfirmationQueue = "ConfirmationQueue";
         
-        public static void Main()
+    public static void Main()
+    {
+        var factory = new ConnectionFactory { 
+            HostName = "localhost",//Environment.GetEnvironmentVariable("RabbitMqHost"),
+            /*UserName = "user",//Environment.GetEnvironmentVariable("RabbitMqUsername"),
+            Password = "pass"//Environment.GetEnvironmentVariable("RabbitMqPassword")*/
+        };
+        var db = new ReservationDbContext();
+        
+        using var connection = factory.CreateConnection();
+        var channel = connection.CreateModel();
+
+        channel.QueueDeclare(queue: ReservationQueue,
+            durable:false, 
+            exclusive: false, 
+            autoDelete:false, 
+            arguments:null);
+
+        channel.QueueDeclare(queue: ConfirmationQueue,
+            durable:false, 
+            exclusive: false, 
+            autoDelete:false, 
+            arguments:null);
+        
+        var consumer = new EventingBasicConsumer(channel);
+
+        consumer.Received += (_, ea) =>
         {
-            var factory = new ConnectionFactory {
-                HostName = Environment.GetEnvironmentVariable("RabbitMqHost"),
-                UserName = Environment.GetEnvironmentVariable("RabbitMqUsername"),
-                Password = Environment.GetEnvironmentVariable("RabbitMqPassword")
-            };
-            using var connection = factory.CreateConnection();
-            using var channel = connection.CreateModel();
-            channel.ExchangeDeclare(ExchangeName, "direct");
-            var QueueName = channel.QueueDeclare().QueueName;
-            channel.QueueBind(QueueName, ExchangeName, RoutingKey);
+            var body = ea.Body.ToArray();
 
-            channel.BasicQos(0, 1, false);
+            var message = Encoding.UTF8.GetString(body);
 
-            var consumer = new EventingBasicConsumer(channel);
+            var cmd = JsonConvert.DeserializeObject<ReservationRequest>(message);
 
-            channel.BasicConsume(QueueName, false, consumer);
+            Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Received Command Type: {0} with message {1}", cmd.hotelId, cmd.roomNo);
+            var reservation = Reservation.MapDtoToReservation(cmd);
+            db.Reservations.Add(reservation);
+            db.SaveChanges();
+            
+            var obj = JsonConvert.SerializeObject(reservation);
+            var newBody = Encoding.UTF8.GetBytes(obj);
 
-            consumer.Received += (_, ea) =>
-            {
-                string response = null;
-
-                var body = ea.Body.ToArray();
-                var props = ea.BasicProperties;
-                var replyProps = channel.CreateBasicProperties();
-                replyProps.CorrelationId = props.CorrelationId;
-
-                try
-                {
-                    var message = Encoding.UTF8.GetString(body);
-
-                    var cmd = JsonConvert.DeserializeObject<Command>(message);
-                    
-                    Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Received Command Type: {0} with message {1}", cmd.Type, cmd.Name);
-
-                    response = cmd.Type switch
-                    {
-                        HotelBookingCmd.Type => cmd.Name == "hotel" ? "HotelTrue" : "HotelFalse",
-                        
-                        HotelCancelCmd.Type => "HotelCancelled",
-                        _ => "False"
-                    };
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(" [.] " + e.Message);
-                    response = "";
-                }
-                finally
-                {
-                    var responseBytes = Encoding.UTF8.GetBytes(response);
-                    channel.BasicPublish("", props.ReplyTo, replyProps, responseBytes);
-                    channel.BasicAck(ea.DeliveryTag, false);
-                }
-            };
-
-            for (;;) ;
-        }
+            channel.BasicPublish(exchange: "",
+                routingKey: "ConfirmationQueue",
+                basicProperties: null,
+                body: newBody);
+            Console.WriteLine(" [x] Sent {0}", reservation);
+        };
+        
+        channel.BasicConsume(ReservationQueue, true, consumer);
+            
+        Console.WriteLine(" Press [enter] to exit.");
+        Console.ReadLine();
     }
 }
