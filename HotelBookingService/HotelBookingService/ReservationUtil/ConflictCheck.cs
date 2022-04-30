@@ -7,9 +7,8 @@ namespace Consumer.ReservationUtil;
 
 public static class ConflictCheck
 {
-    public static Reservation EnsureNoConflictingReservation(ReservationRequest request)
+    public static Reservation EnsureNoConflictingReservation(ReservationRequest request, ReservationDbContext db)
     {
-        var db = new ReservationDbContext();
         // Ensure no conflicting reservations
         Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Checking for conflicting reservations");
         

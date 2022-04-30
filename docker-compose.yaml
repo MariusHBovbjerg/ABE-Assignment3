@@ -26,6 +26,9 @@ services:
       - "RABBITMQ_PORT=5672"
       - "RABBITMQ_USER=guest"
       - "RABBITMQ_PASS=guest"
+      - "SA_PASSWORD=yourStrong(!)Password"
+      - "MSSQL_HOST=mssql"
+      - "MSSQL_PORT=1433"
     depends_on:
       - rabbit
       - mssql
@@ -76,5 +79,3 @@ services:
     environment:
       - "ACCEPT_EULA=Y"
       - "SA_PASSWORD=yourStrong(!)Password"
-      - "MSSQL_HOST=mssql"
-      - "MSSQL_PORT=1433"
