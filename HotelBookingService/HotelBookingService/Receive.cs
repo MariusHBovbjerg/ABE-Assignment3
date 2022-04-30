@@ -21,8 +21,12 @@ public static class Receive
             HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST")?? "localhost",
             Port = int.Parse(Environment.GetEnvironmentVariable("RABBITMQ_PORT")?? "5672"),
             UserName = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest",
-            Password = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest"
+            Password = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest",
+            RequestedHeartbeat = TimeSpan.FromSeconds(30),
+            AutomaticRecoveryEnabled = true,
+            NetworkRecoveryInterval = TimeSpan.FromSeconds(2)
         };
+
         var db = new ReservationDbContext();
         
         using var connection = factory.CreateConnection();
