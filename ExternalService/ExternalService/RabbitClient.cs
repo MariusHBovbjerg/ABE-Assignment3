@@ -15,9 +15,10 @@ public class RabbitClient
     public RabbitClient()
     {
         var factory = new ConnectionFactory { 
-            HostName = "localhost",//Environment.GetEnvironmentVariable("RabbitMqHost"),
-            /*UserName = "user",//Environment.GetEnvironmentVariable("RabbitMqUsername"),
-            Password = "pass"//Environment.GetEnvironmentVariable("RabbitMqPassword")*/
+            HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST")?? "localhost",
+            Port = int.Parse(Environment.GetEnvironmentVariable("RABBITMQ_PORT")?? "5672"),
+            UserName = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest",
+            Password = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest"
         };
 
         _connection = factory.CreateConnection();

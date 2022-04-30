@@ -1,3 +1,4 @@
+using System;
 using Consumer.Models.Dto;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +8,13 @@ public class ReservationDbContext : DbContext
 {
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlServer(@"Server=[::1],1433;Database=ReservationDb;User Id=SA;Password=yourStrong(!)Password;Trusted_Connection=false;");
+        var connectionString =
+            @"Server=" + (Environment.GetEnvironmentVariable("SA_PASSWORD")?? "[::1]") + ","
+            + (Environment.GetEnvironmentVariable("MSSQL_PORT")?? "1433") + ";" 
+            + "Database=ReservationDb;User Id=SA;Password="
+            + (Environment.GetEnvironmentVariable("SA_PASSWORD") ?? "yourStrong(!)Password") + ";"
+            + "Trusted_Connection=false;";
+        optionsBuilder.UseSqlServer(connectionString);
     }
 
     public DbSet<Reservation> Reservations { get; set; }
