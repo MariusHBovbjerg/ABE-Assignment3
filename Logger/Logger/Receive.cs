@@ -21,6 +21,7 @@ public static class Receive
         
         using var connection = factory.CreateConnection();
         var channel = connection.CreateModel();
+        channel.BasicQos(0,1,true); // prefetch only one message at a time
 
         channel.QueueDeclare(queue: ConfirmationQueue,
             durable:false, 
@@ -38,7 +39,7 @@ public static class Receive
 
             var cmd = JsonConvert.DeserializeObject<ReservationRequest>(message);
 
-            Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Received Command Type: {0} with message {1}", cmd.hotelId, cmd.roomNo);
+            Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Received Reservation Confirmation for Reservation: {0} for room {1} in hotel {2}", cmd?.orderId, cmd?.roomNo, cmd?.hotelId);
         };
         
         channel.BasicConsume(ConfirmationQueue, true, consumer);

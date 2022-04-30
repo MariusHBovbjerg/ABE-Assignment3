@@ -24,6 +24,7 @@ public static class Receive
         
         using var connection = factory.CreateConnection();
         var channel = connection.CreateModel();
+        channel.BasicQos(0,1,true); // prefetch only one message at a time
 
         channel.QueueDeclare(queue: ReservationQueue,
             durable:false, 
@@ -47,10 +48,11 @@ public static class Receive
 
             var cmd = JsonConvert.DeserializeObject<ReservationRequest>(message);
 
-            Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Received Command Type: {0} with message {1}", cmd.hotelId, cmd.roomNo);
+            Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Received Reservation request for hotel {0} with room {1}.", cmd?.hotelId, cmd?.roomNo);
             var reservation = Reservation.MapDtoToReservation(cmd);
             db.Reservations.Add(reservation);
             db.SaveChanges();
+            Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Saved Reservation");
             
             var obj = JsonConvert.SerializeObject(reservation);
             var newBody = Encoding.UTF8.GetBytes(obj);
@@ -59,12 +61,12 @@ public static class Receive
                 routingKey: "ConfirmationQueue",
                 basicProperties: null,
                 body: newBody);
-            Console.WriteLine(" [x] Sent {0}", reservation);
+            Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Sent Confirmation for reservation id {0}", reservation.orderId);
         };
         
         channel.BasicConsume(ReservationQueue, true, consumer);
             
-        Console.WriteLine(" Press [enter] to exit.");
+        Console.WriteLine("Press [enter] to exit.");
         Console.ReadLine();
     }
 }
