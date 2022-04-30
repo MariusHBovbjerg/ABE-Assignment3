@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Text;
-using Consumer.Database;
+using System.Threading;
 using Consumer.Models.Dto;
 using Consumer.ReservationUtil;
 using Newtonsoft.Json;
@@ -14,24 +13,15 @@ public static class Receive
 {
     private const string ReservationQueue = "ReservationQueue";
     private const string ConfirmationQueue = "ConfirmationQueue";
+    
+    private static IConnection _connection;
         
     public static void Main()
     {
-        var factory = new ConnectionFactory { 
-            HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST")?? "localhost",
-            Port = int.Parse(Environment.GetEnvironmentVariable("RABBITMQ_PORT")?? "5672"),
-            UserName = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest",
-            Password = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest",
-            RequestedHeartbeat = TimeSpan.FromSeconds(30),
-            AutomaticRecoveryEnabled = true,
-            NetworkRecoveryInterval = TimeSpan.FromSeconds(2)
-        };
-
-        var db = new ReservationDbContext();
-        
-        using var connection = factory.CreateConnection();
-        var channel = connection.CreateModel();
-        channel.BasicQos(0,1,true); // prefetch only one message at a time
+        _connection = RetryRabbitMqConnection();
+        Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Connected");
+        var channel = _connection.CreateModel();
+        //channel.BasicQos(0,1,true); // prefetch only one message at a time
 
         channel.QueueDeclare(queue: ReservationQueue,
             durable:false, 
@@ -72,5 +62,26 @@ public static class Receive
         channel.BasicConsume(ReservationQueue, true, consumer);
 
         for (;;) ;
+    }
+    
+    private static IConnection RetryRabbitMqConnection()
+    {
+        var factory = new ConnectionFactory { 
+            HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST")?? "localhost",
+            Port = int.Parse(Environment.GetEnvironmentVariable("RABBITMQ_PORT")?? "5672"),
+            UserName = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest",
+            Password = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest",
+            RequestedHeartbeat = TimeSpan.FromSeconds(30),
+            AutomaticRecoveryEnabled = true,
+            NetworkRecoveryInterval = TimeSpan.FromSeconds(2)
+        };
+        
+        try {
+            return factory.CreateConnection();
+        } catch (RabbitMQ.Client.Exceptions.BrokerUnreachableException e) {
+            Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Failed to connect. Retrying");
+            Thread.Sleep(1000);
+            return RetryRabbitMqConnection();
+        }
     }
 }
