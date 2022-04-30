@@ -1,55 +1,64 @@
 version: '3'
 
 services:
-  car.bookingservice:
-    image: carbookingservice 
+  logger:
+    image: logger 
     build:
-      context: ./carbookingservice
+      context: ./Logger
       dockerfile: Dockerfile
-    container_name: carbookingservice
+    container_name: logger
     environment:
-      - "RabbitMqHost=rabbit"
-      - "RabbitMqUsername=guest"
-      - "RabbitMqPassword=guest"
+      - "RABBITMQ_HOST=rabbit"
+      - "RABBITMQ_PORT=5672"
+      - "RABBITMQ_USER=guest"
+      - "RABBITMQ_PASS=guest"
     depends_on:
       - rabbit
 
-  hotel.bookingservice:
+  hotelbookingservice:
     image: hotelbookingservice 
     build:
-      context: ./hotelbookingservice
+      context: ./HotelBookingService
       dockerfile: Dockerfile
     container_name: hotelbookingservice
     environment:
-      - "RabbitMqHost=rabbit"
-      - "RabbitMqUsername=guest"
-      - "RabbitMqPassword=guest"
+      - "RABBITMQ_HOST=rabbit"
+      - "RABBITMQ_PORT=5672"
+      - "RABBITMQ_USER=guest"
+      - "RABBITMQ_PASS=guest"
+    depends_on:
+      - rabbit
+      - mssql
+
+  externalservice:
+    image: externalservice
+    build:
+      context: ./ExternalService
+      dockerfile: Dockerfile
+    container_name: externalservice
+    ports:
+      - "8080:44311"
+    environment:
+      - "RABBITMQ_HOST=rabbit"
+      - "RABBITMQ_PORT=5672"
+      - "RABBITMQ_USER=guest"
+      - "RABBITMQ_PASS=guest"
     depends_on:
       - rabbit
 
-  flight.bookingservice:
-    image: flightbookingservice 
+  externalservice-node:
+    image: externalservicenode
     build:
-      context: ./flightbookingservice
+      context: ./external-service-node
       dockerfile: Dockerfile
-    container_name: flightbookingservice
+    container_name: externalservicenode
+    ports:
+      - "8079:3001"
     environment:
-      - "RabbitMqHost=rabbit"
-      - "RabbitMqUsername=guest"
-      - "RabbitMqPassword=guest"
-    depends_on:
-      - rabbit
-
-  producer:
-    image: producerservice
-    build:
-      context: ./producerservice
-      dockerfile: Dockerfile
-    container_name: producerservice
-    environment:
-      - "RabbitMqHost=rabbit"
-      - "RabbitMqUsername=guest"
-      - "RabbitMqPassword=guest"
+      - "RABBITMQ_HOST=rabbit"
+      - "RABBITMQ_PORT=5672"
+      - "RABBITMQ_USER=guest"
+      - "RABBITMQ_PASS=guest"
     depends_on:
       - rabbit
 
@@ -59,3 +68,15 @@ services:
     ports:
       - "15672:15672"
       - "5672:5672"
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    ports:
+      - "1433:1433"
+    volumes:
+      - ~apps/mssql/data:/var/lib/mssqlql/data
+    environment:
+      - "ACCEPT_EULA=Y"
+      - "SA_PASSWORD=yourStrong(!)Password"
+      - "MSSQL_HOST=mssql"
+      - "MSSQL_PORT=1433"
