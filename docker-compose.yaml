@@ -37,7 +37,7 @@ services:
       dockerfile: Dockerfile
     container_name: externalservice
     ports:
-      - "8080:44311"
+      - "8080:80"
     environment:
       - "RABBITMQ_HOST=rabbit"
       - "RABBITMQ_PORT=5672"
@@ -73,8 +73,6 @@ services:
     image: mcr.microsoft.com/mssql/server:2019-latest
     ports:
       - "1433:1433"
-    volumes:
-      - ~apps/mssql/data:/var/lib/mssqlql/data
     environment:
       - "ACCEPT_EULA=Y"
       - "SA_PASSWORD=yourStrong(!)Password"
