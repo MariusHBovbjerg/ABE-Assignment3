@@ -70,8 +70,7 @@ public static class Receive
         };
         
         channel.BasicConsume(ReservationQueue, true, consumer);
-            
-        Console.WriteLine("Press [enter] to exit.");
-        Console.ReadLine();
+
+        for (;;) ;
     }
 }

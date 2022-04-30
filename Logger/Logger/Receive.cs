@@ -48,7 +48,6 @@ public static class Receive
         
         channel.BasicConsume(ConfirmationQueue, true, consumer);
             
-        Console.WriteLine(" Press [enter] to exit.");
-        Console.ReadLine();
+        for (;;) ;
     }
 }
