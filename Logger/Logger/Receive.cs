@@ -19,7 +19,7 @@ public static class Receive
         _connection = RetryRabbitMqConnection();
         Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Connected");
         var channel = _connection.CreateModel();
-        //channel.BasicQos(0,1,true); // prefetch only one message at a time
+        channel.BasicQos(0,1,true); // prefetch only one message at a time
 
         channel.QueueDeclare(queue: ConfirmationQueue,
             durable:false, 

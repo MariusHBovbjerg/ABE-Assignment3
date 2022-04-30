@@ -9,7 +9,7 @@ public class ReservationDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         var connectionString =
-            @"Server=" + (Environment.GetEnvironmentVariable("SA_PASSWORD")?? "[::1]") + ","
+            @"Server=" + (Environment.GetEnvironmentVariable("MSSQL_HOST")?? "[::1]") + ","
             + (Environment.GetEnvironmentVariable("MSSQL_PORT")?? "1433") + ";" 
             + "Database=ReservationDb;User Id=SA;Password="
             + (Environment.GetEnvironmentVariable("SA_PASSWORD") ?? "yourStrong(!)Password") + ";"
