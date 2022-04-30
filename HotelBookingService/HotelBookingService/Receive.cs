@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 using Consumer.Database;
 using Consumer.Models.Dto;
+using Consumer.ReservationUtil;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -49,9 +51,7 @@ public static class Receive
             var cmd = JsonConvert.DeserializeObject<ReservationRequest>(message);
 
             Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Received Reservation request for hotel {0} with room {1}.", cmd?.hotelId, cmd?.roomNo);
-            var reservation = Reservation.MapDtoToReservation(cmd);
-            db.Reservations.Add(reservation);
-            db.SaveChanges();
+            var reservation =  ConflictCheck.EnsureNoConflictingReservation(cmd);
             Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Saved Reservation");
             
             var obj = JsonConvert.SerializeObject(reservation);
