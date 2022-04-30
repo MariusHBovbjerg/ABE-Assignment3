@@ -4,6 +4,7 @@ using System.Threading;
 using Consumer.Database;
 using Consumer.Models.Dto;
 using Consumer.ReservationUtil;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -20,6 +21,7 @@ public static class Receive
     public static void Main()
     {
         var db = new ReservationDbContext();
+        db.Database.Migrate();
         _connection = RetryRabbitMqConnection();
         Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Connected");
         var channel = _connection.CreateModel();
