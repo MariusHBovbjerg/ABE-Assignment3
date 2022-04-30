@@ -14,7 +14,10 @@ public class ReservationDbContext : DbContext
             + "Database=ReservationDb;User Id=SA;Password="
             + (Environment.GetEnvironmentVariable("SA_PASSWORD") ?? "yourStrong(!)Password") + ";"
             + "Trusted_Connection=false;";
+        Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond + " - "+connectionString);
         optionsBuilder.UseSqlServer(connectionString);
+        
+        Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - connected to db");
     }
 
     public DbSet<Reservation> Reservations { get; set; }
