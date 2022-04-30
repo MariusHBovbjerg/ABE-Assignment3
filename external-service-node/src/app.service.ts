@@ -7,7 +7,7 @@ const QUEUE_NAME = process.env.RABBITMQ_QUEUE || 'test';
 @Injectable()
 export class AppService {
   constructor(@Inject('RabbitMQ') private channel: Channel) {
-    channel.assertQueue('ReservationQueue', {
+    channel.assertQueue(QUEUE_NAME, {
       durable: false,
       exclusive: false,
       autoDelete: false,

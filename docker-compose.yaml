@@ -62,6 +62,7 @@ services:
       - "RABBITMQ_PORT=5672"
       - "RABBITMQ_USER=guest"
       - "RABBITMQ_PASS=guest"
+      - "RABBITMQ_QUEUE=ReservationQueue"
     depends_on:
       - rabbit
 
