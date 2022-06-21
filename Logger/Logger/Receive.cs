@@ -58,7 +58,7 @@ public static class Receive
         
         try {
             return factory.CreateConnection();
-        } catch (RabbitMQ.Client.Exceptions.BrokerUnreachableException e) {
+        } catch (RabbitMQ.Client.Exceptions.BrokerUnreachableException) {
             Console.WriteLine(Environment.MachineName + " - " + DateTime.Now.Millisecond +" - Failed to connect. Retrying");
             Thread.Sleep(1000);
             return RetryRabbitMqConnection();
